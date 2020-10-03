@@ -39,6 +39,7 @@
 #include "core/resource.h"
 #include "core/script_language.h"
 #include "core/translation.h"
+#include "core/math/math_defs.h"
 
 #define DEBUG_GDSCRIPT_CALLS
 #ifdef DEBUG_ENABLED
@@ -2189,3 +2190,54 @@ void ObjectDB::cleanup() {
 	rw_lock->write_unlock();
 	memdelete(rw_lock);
 }
+
+HashMap<String, HashMap<String, List<uint64_t>>>Object::counters = {};
+
+void Object::inc_class_counter(String counterName, uint64_t amount) {
+	if (amount < 10) {
+		return;
+	}
+	HashMap<String, List<uint64_t>>*counter = counters.getptr(counterName);
+	if (!counter) {
+		counters.set(counterName, HashMap<String, List<uint64_t>>());
+		counter = counters.getptr(counterName);
+	}
+	StringName className = String(get_class_name());
+	List<uint64_t> *value = counter->getptr(className);
+	if (!value) {
+		counter->set(className, List<uint64_t>());
+		value = counter->getptr(className);
+	}
+	value->push_back(amount);
+}
+
+void Object::profile_class_counter(String prefix, HashMap<String, List<uint64_t>> &counter, Array values) {
+	List<String> keys;
+	counter.get_key_list(&keys);
+	for (List<String>::Element *E = keys.front(); E; E = E->next()) {
+		String &key = E->get();
+		List<uint64_t> *counterValues = counter.getptr(key);
+		values.push_back(prefix + String(key));
+		uint64_t sum = 0;
+		for (List<uint64_t>::Element *V = counterValues->front(); V; V = V->next()) {
+			// TODO: figure out how to get the `calls` number to be accurate
+			sum += V->get();
+		}
+		values.push_back(USEC_TO_SEC(sum));
+		counterValues->clear();
+	}
+}
+
+void Object::profile() {
+	Array values;
+	List<String> keys;
+	counters.get_key_list(&keys);
+	for (List<String>::Element *E = keys.front(); E; E = E->next()) {
+		String &key = E->get();
+		Object::profile_class_counter(key, counters[key], values);
+	}
+	if (ScriptDebugger::get_singleton() && ScriptDebugger::get_singleton()->is_profiling()) {
+		ScriptDebugger::get_singleton()->add_profiling_frame_data(get_class_static(), values);
+	}
+}
+

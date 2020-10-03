@@ -2132,7 +2132,7 @@ bool Main::iteration() {
 	for (int i = 0; i < ScriptServer::get_language_count(); i++) {
 		ScriptServer::get_language(i)->frame();
 	}
-
+	Object::profile();
 	AudioServer::get_singleton()->update();
 
 	if (script_debugger) {

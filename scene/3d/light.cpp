@@ -33,6 +33,7 @@
 #include "core/engine.h"
 #include "core/project_settings.h"
 #include "scene/resources/surface_tool.h"
+#include "core/os/os.h"
 
 bool Light::_can_gizmo_scale() const {
 
@@ -186,10 +187,14 @@ void Light::_update_visibility() {
 		editor_ok = false;
 	}
 #endif
-
+	uint64_t time = OS::get_singleton()->get_ticks_usec();
 	VS::get_singleton()->instance_set_visible(get_instance(), is_visible_in_tree() && editor_ok);
-
+	time = OS::get_singleton()->get_ticks_usec() - time;
+	inc_class_counter(is_visible_in_tree() ? "vs_light_show" : "vs_light_hide", time);
+	time = OS::get_singleton()->get_ticks_usec();
 	_change_notify("geometry/visible");
+	time = OS::get_singleton()->get_ticks_usec() - time;
+	inc_class_counter(is_visible_in_tree() ? "vs_light_show2" : "vs_light_hide2", time);
 }
 
 void Light::_notification(int p_what) {

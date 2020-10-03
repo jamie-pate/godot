@@ -35,6 +35,7 @@
 #include "scene/main/scene_tree.h"
 #include "scene/main/viewport.h"
 #include "scene/scene_string_names.h"
+#include "core/os/os.h"
 
 /*
 
@@ -516,10 +517,22 @@ Ref<World> Spatial::get_world() const {
 }
 
 void Spatial::_propagate_visibility_changed() {
-
+	uint32_t time = OS::get_singleton()->get_ticks_usec();
+	String className = String(get_class_name());
+	if (className == String("OmniLight")) {
+		print_verbose(className);
+	}
 	notification(NOTIFICATION_VISIBILITY_CHANGED);
+	time = OS::get_singleton()->get_ticks_usec() - time;
+	inc_class_counter(data.visible ? "show" : "hide", time);
+	time = OS::get_singleton()->get_ticks_usec();
 	emit_signal(SceneStringNames::get_singleton()->visibility_changed);
+	time = OS::get_singleton()->get_ticks_usec() - time;
+	inc_class_counter(data.visible ? "show2" : "hide2", time);
+	time = OS::get_singleton()->get_ticks_usec();
 	_change_notify("visible");
+	time = OS::get_singleton()->get_ticks_usec() - time;
+	inc_class_counter(data.visible ? "show3" : "hide3", time);
 #ifdef TOOLS_ENABLED
 	if (data.gizmo.is_valid())
 		_update_gizmo();
@@ -543,7 +556,6 @@ void Spatial::show() {
 
 	if (!is_inside_tree())
 		return;
-
 	_propagate_visibility_changed();
 }
 

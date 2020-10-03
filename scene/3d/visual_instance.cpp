@@ -34,6 +34,8 @@
 #include "servers/visual_server.h"
 #include "skeleton.h"
 
+#include "core/os/os.h"
+
 AABB VisualInstance::get_transformed_aabb() const {
 
 	return get_global_transform().xform(get_aabb());
@@ -45,7 +47,12 @@ void VisualInstance::_update_visibility() {
 		return;
 
 	_change_notify("visible");
+
+	uint64_t time = OS::get_singleton()->get_ticks_usec();
 	VS::get_singleton()->instance_set_visible(get_instance(), is_visible_in_tree());
+
+	time = OS::get_singleton()->get_ticks_usec() - time;
+	inc_class_counter(is_visible_in_tree() ? "vi:show" : "vi:hide", time);
 }
 
 void VisualInstance::_notification(int p_what) {
@@ -78,7 +85,10 @@ void VisualInstance::_notification(int p_what) {
 
 		} break;
 		case NOTIFICATION_VISIBILITY_CHANGED: {
-
+			String className = String(get_class_name());
+			if (className == String("OmniLight")) {
+				print_verbose(className);
+			}
 			_update_visibility();
 		} break;
 	}

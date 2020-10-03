@@ -518,6 +518,10 @@ private:
 	uint32_t instance_binding_count;
 	void *_script_instance_bindings[MAX_SCRIPT_INSTANCE_BINDINGS];
 
+	static HashMap<String, HashMap<String, List<uint64_t>>> counters;
+
+	static void profile_class_counter(String prefix, HashMap<String, List<uint64_t>> &counter, Array values);
+
 protected:
 	virtual void _initialize_classv() { initialize_class(); }
 	virtual bool _setv(const StringName &p_name, const Variant &p_property) { return false; };
@@ -577,11 +581,15 @@ protected:
 
 	void _disconnect(const StringName &p_signal, Object *p_to_object, const StringName &p_to_method, bool p_force = false);
 
+	void inc_class_counter(String counterName, uint64_t amount);
+
 public: //should be protected, but bug in clang++
 	static void initialize_class();
 	_FORCE_INLINE_ static void register_custom_data_to_otdb(){};
 
 public:
+
+	static void profile();
 #ifdef TOOLS_ENABLED
 	_FORCE_INLINE_ void _change_notify(const char *p_property = "") {
 		_edited = true;
