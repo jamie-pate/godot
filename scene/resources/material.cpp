@@ -388,9 +388,10 @@ void SpatialMaterial::finish_shaders() {
 
 	memdelete(shader_names);
 }
-
+#include <atomic>
 void SpatialMaterial::_update_shader() {
-
+	
+	volatile int bm = blend_mode;
 	dirty_materials->remove(&element);
 
 	MaterialKey mk = _compute_key();
@@ -415,6 +416,11 @@ void SpatialMaterial::_update_shader() {
 		return;
 	}
 
+	_updating = true;
+	bool _features[FEATURE_MAX] = {};
+	for (int i = 0; i < FEATURE_MAX; ++i) {
+		_features[i] = features[i];
+	}
 	//must create a shader!
 
 	String code = "shader_type spatial;\nrender_mode ";
@@ -427,19 +433,16 @@ void SpatialMaterial::_update_shader() {
 		case BLEND_MODE_SUB: code += "blend_sub"; break;
 		case BLEND_MODE_MUL: code += "blend_mul"; break;
 		default:
-			print_verbose(String::num_int64(blend_mode) + (" <-- FUCK"));
+		print_verbose("BLEND MODE CORRUPT!? " + String::num_int64(bm) + ".." + String::num_int64(blend_mode));
 	}
 
 	DepthDrawMode ddm = depth_draw_mode;
 	if (features[FEATURE_REFRACTION]) {
 		ddm = DEPTH_DRAW_ALWAYS;
 	}
-	if (code == String("shader_type spatial;\nrender_mode ")) {
-		print_verbose(code);
-	}
-	print_verbose(code);
-	if (code.ends_with("render_mode ")) {
-		print_error(String("Shader error ") + String::num_int64((int)blend_mode) + String(" FAILed to compile shader for ") + get_path());
+
+	if (code == "shader_type spatial;\nrender_mode ") {
+		print_verbose("BLEND MODE CORRUPT!? " + String::num_int64(bm) + ".." + String::num_int64(blend_mode));
 	}
 	switch (ddm) {
 		case DEPTH_DRAW_OPAQUE_ONLY: code += ",depth_draw_opaque"; break;
@@ -1069,6 +1072,12 @@ void SpatialMaterial::_update_shader() {
 	shader_map[mk] = shader_data;
 
 	VS::get_singleton()->material_set_shader(_get_material(), shader_data.shader);
+	for (int i = 0; i < FEATURE_MAX; ++i) {
+		if (features[i] != _features[i]) {
+			print_verbose("features changed while generating the texture!?");
+		}
+	}
+	_updating = false;
 }
 
 void SpatialMaterial::flush_changes() {
@@ -1406,7 +1415,9 @@ void SpatialMaterial::set_feature(Feature p_feature, bool p_enabled) {
 	ERR_FAIL_INDEX(p_feature, FEATURE_MAX);
 	if (features[p_feature] == p_enabled)
 		return;
-
+	if (_updating) {
+		print_verbose("DONT CHANGE IM UPDATING!");
+	}
 	features[p_feature] = p_enabled;
 	_change_notify();
 	_queue_shader_change();
@@ -2358,7 +2369,7 @@ void SpatialMaterial::_bind_methods() {
 
 SpatialMaterial::SpatialMaterial() :
 		element(this) {
-
+	_updating = false;
 	// Initialize to the same values as the shader
 	set_albedo(Color(1.0, 1.0, 1.0, 1.0));
 	set_specular(0.5);
