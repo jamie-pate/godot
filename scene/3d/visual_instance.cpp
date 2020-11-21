@@ -147,8 +147,8 @@ RID VisualInstance::get_base() const {
 }
 
 VisualInstance::VisualInstance() {
-
 	instance = VisualServer::get_singleton()->instance_create();
+	VisualServer::get_singleton()->instance_node(instance, this);
 	VisualServer::get_singleton()->instance_attach_object_instance_id(instance, get_instance_id());
 	layers = 1;
 	set_notify_transform(true);

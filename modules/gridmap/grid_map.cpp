@@ -76,6 +76,8 @@ bool GridMap::_set(const StringName &p_name, const Variant &p_value) {
 			bm.mesh = meshes[i];
 			ERR_CONTINUE(!bm.mesh.is_valid());
 			bm.instance = VS::get_singleton()->instance_create();
+
+			VS::get_singleton()->instance_node(bm.instance, this);
 			VS::get_singleton()->get_singleton()->instance_set_base(bm.instance, bm.mesh->get_rid());
 			VS::get_singleton()->instance_attach_object_instance_id(bm.instance, get_instance_id());
 			if (is_inside_tree()) {
@@ -315,6 +317,7 @@ void GridMap::set_cell_item(int p_x, int p_y, int p_z, int p_item, int p_rot) {
 
 			g->collision_debug = VisualServer::get_singleton()->mesh_create();
 			g->collision_debug_instance = VisualServer::get_singleton()->instance_create();
+			print_verbose("GridmapDebug " + get_name() + " : " + String::num_int64(g->collision_debug_instance.get_id()));
 			VisualServer::get_singleton()->instance_set_base(g->collision_debug_instance, g->collision_debug);
 		}
 
@@ -532,6 +535,7 @@ bool GridMap::_octant_update(const OctantKey &p_key) {
 			}
 
 			RID instance = VS::get_singleton()->instance_create();
+			VS::get_singleton()->instance_node(instance, this);
 			VS::get_singleton()->instance_set_base(instance, mm);
 
 			if (is_inside_tree()) {
@@ -541,6 +545,7 @@ bool GridMap::_octant_update(const OctantKey &p_key) {
 
 			mmi.multimesh = mm;
 			mmi.instance = instance;
+
 
 			g.multimesh_instances.push_back(mmi);
 		}
@@ -735,6 +740,8 @@ void GridMap::_update_visibility() {
 		Octant *octant = e->value();
 		for (int i = 0; i < octant->multimesh_instances.size(); i++) {
 			const Octant::MultimeshInstance &mi = octant->multimesh_instances[i];
+
+			VS::get_singleton()->instance_node(mi.instance, this);
 			VS::get_singleton()->instance_set_visible(mi.instance, is_visible());
 		}
 	}
@@ -1048,6 +1055,8 @@ void GridMap::make_baked_meshes(bool p_gen_lightmap_uv, float p_lightmap_uv_texe
 		BakedMesh bm;
 		bm.mesh = mesh;
 		bm.instance = VS::get_singleton()->instance_create();
+
+		VS::get_singleton()->instance_node(bm.instance, this);
 		VS::get_singleton()->get_singleton()->instance_set_base(bm.instance, bm.mesh->get_rid());
 		VS::get_singleton()->instance_attach_object_instance_id(bm.instance, get_instance_id());
 		if (is_inside_tree()) {

@@ -508,6 +508,11 @@ GDScriptParser::Node *GDScriptParser::_parse_expression(Node *p_parent, bool p_s
 						res = ScriptCodeCompletionCache::get_singleton()->get_cached_resource(path);
 					} else if (!for_completion || FileAccess::exists(path)) {
 						res = ResourceLoader::load(path);
+						if (Resource::_parser.length()) {
+							res->_owners.push_back(Resource::_parser);
+						} else {
+							res->_owners.push_back("Anonymous");
+						}
 					}
 				} else {
 

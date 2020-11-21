@@ -101,9 +101,9 @@ bool Reference::unreference() {
 
 	return die;
 }
-
+String Reference::_parser = "";
 Reference::Reference() {
-
+	_owners = {};
 	refcount.init();
 	refcount_init.init();
 }

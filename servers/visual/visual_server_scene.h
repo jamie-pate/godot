@@ -38,6 +38,8 @@
 #include "core/os/semaphore.h"
 #include "core/os/thread.h"
 #include "core/self_list.h"
+#include "scene/main/node.h"
+#include "core/reference.h"
 #include "servers/arvr/arvr_interface.h"
 
 class VisualServerScene {
@@ -142,6 +144,7 @@ public:
 
 	struct Instance : RasterizerScene::InstanceBase {
 
+		Node *node;
 		RID self;
 		//scenario stuff
 		OctreeElementID octree_id;
@@ -219,7 +222,7 @@ public:
 				memdelete(custom_aabb);
 		}
 	};
-
+	void *owner;
 	SelfList<Instance>::List _instance_update_list;
 	void _instance_queue_update(Instance *p_instance, bool p_update_aabb, bool p_update_materials = false);
 
@@ -435,6 +438,7 @@ public:
 	RID_Owner<Instance> instance_owner;
 
 	virtual RID instance_create();
+	virtual void instance_node(RID p_instance, void *node);
 
 	virtual void instance_set_base(RID p_instance, RID p_base);
 	virtual void instance_set_scenario(RID p_instance, RID p_scenario);

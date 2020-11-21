@@ -317,9 +317,15 @@ void VisualServerScene::_instance_queue_update(Instance *p_instance, bool p_upda
 	_instance_update_list.add(&p_instance->update_item);
 }
 
-RID VisualServerScene::instance_create() {
+void VisualServerScene::instance_node(RID p_instance, void *node) {
+	Instance *instance = instance_owner.get(p_instance);
+	ERR_FAIL_COND(!instance);
+	instance->node = Object::cast_to<Node>(reinterpret_cast<Object *>(node));
+}
 
+RID VisualServerScene::instance_create() {
 	Instance *instance = memnew(Instance);
+	instance->node = 0;
 	ERR_FAIL_COND_V(!instance, RID());
 
 	RID instance_rid = instance_owner.make_rid(instance);
@@ -1972,12 +1978,48 @@ void VisualServerScene::_prepare_scene(const Transform p_cam_transform, const Ca
 				int l = 0;
 				//only called when lights AABB enter/exit this geometry
 				ins->light_instances.resize(geom->lighting.size());
-
+				String lights = "";
 				for (List<Instance *>::Element *E = geom->lighting.front(); E; E = E->next()) {
 
 					InstanceLightData *light = static_cast<InstanceLightData *>(E->get()->base_data);
-
 					ins->light_instances.write[l++] = light->instance;
+					String path = "[" + String::num_int64(ins->object_id) + " " + String::num_int64(ins->get_id()) + "]";
+					Node *node = E->get()->node;
+					if (node) {
+						 if (node->is_inside_tree()) {
+							path = node->get_path();
+						 } else {
+							path = "";
+							while (node) {
+								path = String(node->get_name()) + (path != "" ? path + "." : String(""));
+							node = node->get_parent();
+							}
+						 }
+					}
+					lights = lights + "\nlight\t" + path;
+				}
+				if (l > 32) {
+					lights = "";
+				}
+
+				if (ins->light_instances.size() > 12) {
+					Node *node = (Node *)ins->node;
+					String path = "[" + String::num_int64(ins->object_id) + " " + String::num_int64(ins->get_id()) + "]";
+					if (node) {
+						 if (node->is_inside_tree()) {
+							path = node->get_path();
+						 } else {
+							path = "";
+							while (node) {
+								path = String(node->get_name()) + (path != "" ? path + "." : String(""));
+							node = node->get_parent();
+							}
+						 }
+					}
+					
+					print_verbose("Geometry has too many lights! (" + String::num_int64(ins->light_instances.size()) + ") " +
+						"\tAABB: " + ins->aabb + "\torigin:" + ins->transform.origin + " : " + path + lights);
+					
 				}
 
 				geom->lighting_dirty = false;

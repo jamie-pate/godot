@@ -1696,6 +1696,7 @@ Node *PackedScene::instance(GenEditState p_edit_state) const {
 #endif
 
 	Node *s = state->instance((SceneState::GenEditState)p_edit_state);
+	s->_removed_from = "Instanced from " + state->get_path();
 	if (!s)
 		return NULL;
 

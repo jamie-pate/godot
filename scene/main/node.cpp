@@ -190,7 +190,6 @@ void Node::_propagate_ready() {
 	data.blocked--;
 
 	notification(NOTIFICATION_POST_ENTER_TREE);
-
 	if (data.ready_first) {
 		data.ready_first = false;
 		notification(NOTIFICATION_READY);
@@ -1162,7 +1161,18 @@ void Node::_add_child_nocheck(Node *p_child, const StringName &p_name) {
 	if (data.tree) {
 		p_child->_set_tree(data.tree);
 	}
-
+	p_child->_removed_from = "";
+	if (!is_inside_tree()) {
+		Node *p = p_child->get_parent();
+		while (p) {
+			p_child->_removed_from = ":" + p->get_name() + p_child->_removed_from;
+			p = p->get_parent();
+		}
+		p_child->_removed_from = "(orphan)" + p_child->_removed_from;
+	} else {
+		p_child->_removed_from = String(get_path());
+	}
+	p_child->_removed_from = p_child->_removed_from + " (not removed)";
 	/* Notify */
 	//recognize children created in this node constructor
 	p_child->data.parent_owned = data.in_constructor;
@@ -1228,7 +1238,17 @@ void Node::_propagate_validate_owner() {
 }
 
 void Node::remove_child(Node *p_child) {
-
+	p_child->_removed_from = "";
+	if (!is_inside_tree()) {
+		Node *p = p_child->get_parent();
+		while (p) {
+			p_child->_removed_from = ":" + p->get_name() + p_child->_removed_from;
+			p = p->get_parent();
+		}
+		p_child->_removed_from = "(orphan)" + p_child->_removed_from;
+	} else {
+		p_child->_removed_from = String(get_path());
+	}
 	ERR_FAIL_NULL(p_child);
 	ERR_FAIL_COND_MSG(data.blocked > 0, "Parent node is busy setting up children, remove_node() failed. Consider using call_deferred(\"remove_child\", child) instead.");
 
@@ -1378,6 +1398,9 @@ Node *Node::get_node_or_null(const NodePath &p_path) const {
 Node *Node::get_node(const NodePath &p_path) const {
 
 	Node *node = get_node_or_null(p_path);
+	if (!node) {
+		print_verbose("Node not found: " + p_path + " in " + (is_inside_tree() ? String("") + get_path() : String("") + get_name()));
+	}
 	ERR_FAIL_COND_V_MSG(!node, NULL, "Node not found: " + p_path + ".");
 	return node;
 }
@@ -2977,6 +3000,7 @@ Node::Node() {
 
 Node::~Node() {
 
+	print_verbose("Destroying node: " + get_name());
 	data.grouped.clear();
 	data.owned.clear();
 	data.children.clear();

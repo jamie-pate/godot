@@ -2221,6 +2221,8 @@ void Main::cleanup() {
 		memdelete(script_debugger);
 	}
 
+	// re-clear the delete queue
+	OS::get_singleton()->get_main_loop()->finish();
 	OS::get_singleton()->delete_main_loop();
 
 	OS::get_singleton()->_cmdline.clear();
@@ -2287,7 +2289,6 @@ void Main::cleanup() {
 		OS::get_singleton()->execute(exec, args, false, &pid);
 		OS::get_singleton()->set_restart_on_exit(false, List<String>()); //clear list (uses memory)
 	}
-
 	// Now should be safe to delete MessageQueue (famous last words).
 	message_queue->flush();
 	memdelete(message_queue);

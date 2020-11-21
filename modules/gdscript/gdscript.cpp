@@ -590,7 +590,10 @@ Error GDScript::reload(bool p_keep_state) {
 
 	valid = false;
 	GDScriptParser parser;
+	String oparser = Reference::_parser;
+	Reference::_parser = Resource::get_path();
 	Error err = parser.parse(source, basedir, false, path);
+	Reference::_parser = oparser;
 	if (err) {
 		if (ScriptDebugger::get_singleton()) {
 			GDScriptLanguage::get_singleton()->debug_break_parse(get_path(), parser.get_error_line(), "Parser Error: " + parser.get_error());
@@ -1157,6 +1160,9 @@ void GDScriptInstance::get_property_list(List<PropertyInfo> *p_properties) const
 					pinfo.type = Variant::Type(d["type"].operator int());
 					ERR_CONTINUE(pinfo.type < 0 || pinfo.type >= Variant::VARIANT_MAX);
 					pinfo.name = d["name"];
+					if (pinfo.name == "") {
+						print_verbose("NO NAME");
+					}
 					ERR_CONTINUE(pinfo.name == "");
 					if (d.has("hint"))
 						pinfo.hint = PropertyHint(d["hint"].operator int());

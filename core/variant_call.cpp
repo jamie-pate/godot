@@ -1124,7 +1124,9 @@ void Variant::call_ptr(const StringName &p_method, const Variant **p_args, int p
 			r_error.error = CallError::CALL_ERROR_INSTANCE_IS_NULL;
 			return;
 		}
-
+#ifdef DEBUG_GDSCRIPT_CALLS
+		print_verbose(String(obj->get_class_name()));
+#endif
 		ret = obj->call(p_method, p_args, p_argcount, r_error);
 
 		//else if (type==Variant::METHOD) {
@@ -1132,7 +1134,9 @@ void Variant::call_ptr(const StringName &p_method, const Variant **p_args, int p
 	} else {
 
 		r_error.error = Variant::CallError::CALL_OK;
-
+#ifdef DEBUG_GDSCRIPT_CALLS
+		print_verbose(String("TYPE:") + String::num_int64(type));
+#endif
 		Map<StringName, _VariantCall::FuncData>::Element *E = _VariantCall::type_funcs[type].functions.find(p_method);
 #ifdef DEBUG_ENABLED
 		if (!E) {

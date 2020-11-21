@@ -47,6 +47,8 @@ protected:
 	static void _bind_methods();
 
 public:
+	static String _parser;
+	Vector<String> _owners;
 	_FORCE_INLINE_ bool is_referenced() const { return refcount_init.get() != 1; }
 	bool init_ref();
 	bool reference(); // returns false if refcount is at zero and didn't get increased

@@ -414,6 +414,7 @@ public:
 		CONNECT_REFERENCE_COUNTED = 8,
 	};
 
+	String _removed_from;
 	struct Connection {
 
 		Object *source;

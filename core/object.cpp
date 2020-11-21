@@ -40,7 +40,9 @@
 #include "core/script_language.h"
 #include "core/translation.h"
 
+#define DEBUG_GDSCRIPT_CALLS
 #ifdef DEBUG_ENABLED
+
 
 struct _ObjectDebugLock {
 
@@ -481,6 +483,9 @@ Variant Object::get(const StringName &p_name, bool *r_valid) const {
 
 	Variant ret;
 
+	#ifdef DEBUG_GDSCRIPT_CALLS
+	print_verbose("get " + p_name);
+	#endif
 	if (script_instance) {
 
 		if (script_instance->get(p_name, ret)) {
@@ -895,6 +900,24 @@ Variant Object::call(const StringName &p_method, const Variant **p_args, int p_a
 		return Variant();
 	}
 
+#ifdef DEBUG_GDSCRIPT_CALLS
+
+		Ref<Script> s = {};
+		s = script_instance ? script_instance->get_script() : this->get_script();
+		auto args = String("");
+		for (int i = 0; i < p_argcount; ++i) {
+			if (i > 0) {
+				args += ",";
+			}
+			auto arg = p_args[i];
+			args += arg ? Variant::get_type_name(arg->get_type()) : "NULL";
+		}
+		print_verbose(String("CALLING ") +
+			(s.ptr() ? String(" Call ") + s->get_path() : String("")) +
+			":" + p_method +
+			String(" this: ") + String::num_uint64((uint64_t)this)
+		);
+#endif
 	Variant ret;
 	OBJ_DEBUG_LOCK
 	if (script_instance) {
@@ -918,7 +941,6 @@ Variant Object::call(const StringName &p_method, const Variant **p_args, int p_a
 	MethodBind *method = ClassDB::get_method(get_class_name(), p_method);
 
 	if (method) {
-
 		ret = method->call(this, p_args, p_argcount, r_error);
 	} else {
 		r_error.error = Variant::CallError::CALL_ERROR_INVALID_METHOD;
@@ -2138,6 +2160,7 @@ void ObjectDB::cleanup() {
 			// that overrides any of those methods, it'd not be OK to call them at this point,
 			// now the scripting languages have already been terminated.
 			MethodBind *node_get_name = ClassDB::get_method("Node", "get_name");
+			MethodBind *node_is_queued_for_deletion = ClassDB::get_method("Node", "is_queued_for_deletion");
 			MethodBind *resource_get_path = ClassDB::get_method("Resource", "get_path");
 			Variant::CallError call_error;
 
@@ -2147,8 +2170,15 @@ void ObjectDB::cleanup() {
 				String extra_info;
 				if (instances[*K]->is_class("Node"))
 					extra_info = " - Node name: " + String(node_get_name->call(instances[*K], NULL, 0, call_error));
-				if (instances[*K]->is_class("Resource"))
-					extra_info = " - Resource path: " + String(resource_get_path->call(instances[*K], NULL, 0, call_error));
+					extra_info += " Removed from: " + instances[*K]->_removed_from;
+					extra_info += " is_queued_for_deletion: " + String(node_is_queued_for_deletion->call(instances[*K], NULL, 0, call_error));
+				if (instances[*K]->is_class("Resource")) {
+					extra_info = " - Resource path: " + String(resource_get_path->call(instances[*K], NULL, 0, call_error)) + " owners:";
+					auto o = (static_cast<Resource*>(instances[*K]))->_owners;
+					for (int i = 0; i < o.size(); ++i) {
+						extra_info += " " + o[i];
+					}
+				}
 				print_line("Leaked instance: " + String(instances[*K]->get_class()) + ":" + itos(*K) + extra_info);
 			}
 			print_line("Hint: Leaked instances typically happen when nodes are removed from the scene tree (with `remove_child()`) but not freed (with `free()` or `queue_free()`).");
