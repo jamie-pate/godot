@@ -418,18 +418,29 @@ void SpatialMaterial::_update_shader() {
 	//must create a shader!
 
 	String code = "shader_type spatial;\nrender_mode ";
+	if ((uint64_t)blend_mode > BLEND_MODE_MUL) {
+		print_verbose(String("ILLEGAL BLEND MODE: ") + String::num_int64(blend_mode));
+	}
 	switch (blend_mode) {
 		case BLEND_MODE_MIX: code += "blend_mix"; break;
 		case BLEND_MODE_ADD: code += "blend_add"; break;
 		case BLEND_MODE_SUB: code += "blend_sub"; break;
 		case BLEND_MODE_MUL: code += "blend_mul"; break;
+		default:
+			print_verbose(String::num_int64(blend_mode) + (" <-- FUCK"));
 	}
 
 	DepthDrawMode ddm = depth_draw_mode;
 	if (features[FEATURE_REFRACTION]) {
 		ddm = DEPTH_DRAW_ALWAYS;
 	}
-
+	if (code == String("shader_type spatial;\nrender_mode ")) {
+		print_verbose(code);
+	}
+	print_verbose(code);
+	if (code.ends_with("render_mode ")) {
+		print_error(String("Shader error ") + String::num_int64((int)blend_mode) + String(" FAILed to compile shader for ") + get_path());
+	}
 	switch (ddm) {
 		case DEPTH_DRAW_OPAQUE_ONLY: code += ",depth_draw_opaque"; break;
 		case DEPTH_DRAW_ALWAYS: code += ",depth_draw_always"; break;
