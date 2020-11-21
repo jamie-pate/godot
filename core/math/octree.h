@@ -38,6 +38,7 @@
 #include "core/math/vector3.h"
 #include "core/print_string.h"
 #include "core/variant.h"
+#include "core/os/os.h"
 
 typedef uint32_t OctreeElementID;
 
@@ -958,8 +959,12 @@ void Octree<T, use_pairs, AL>::move(OctreeElementID p_id, const AABB &p_aabb) {
 
 template <class T, bool use_pairs, class AL>
 void Octree<T, use_pairs, AL>::set_pairable(OctreeElementID p_id, bool p_pairable, uint32_t p_pairable_type, uint32_t p_pairable_mask) {
-
+	OS *os = OS::get_singleton();
+	uint64_t time0 = os->get_ticks_msec();
+	uint64_t start = os->get_ticks_msec();
+	bool remove = false;
 	typename ElementMap::Element *E = element_map.find(p_id);
+
 	ERR_FAIL_COND(!E);
 
 	Element &e = E->get();
@@ -967,20 +972,37 @@ void Octree<T, use_pairs, AL>::set_pairable(OctreeElementID p_id, bool p_pairabl
 	if (p_pairable == e.pairable && e.pairable_type == p_pairable_type && e.pairable_mask == p_pairable_mask)
 		return; // no changes, return
 
+	time0 = os->get_ticks_msec() - time0;
+	uint64_t time1 = os->get_ticks_msec();
 	if (!e.aabb.has_no_surface()) {
+		remove = true;
 		_remove_element(&e);
 	}
-
+	time1 = os->get_ticks_msec() - time1;
+	uint64_t time2 = os->get_ticks_msec();
 	e.pairable = p_pairable;
 	e.pairable_type = p_pairable_type;
 	e.pairable_mask = p_pairable_mask;
 	e.common_parent = NULL;
 
+	time2 = os->get_ticks_msec() - time2;
+	uint64_t time3 = os->get_ticks_msec();
 	if (!e.aabb.has_no_surface()) {
 		_ensure_valid_root(e.aabb);
 		_insert_element(&e, root);
 		if (use_pairs)
 			_element_check_pairs(&e);
+	}
+	time3 = os->get_ticks_msec() - time3;
+	uint64_t time_total = os->get_ticks_msec() - start;
+	if (time_total > 5) {
+		print_verbose(String("LONG_SET_PAIRABLE") +
+			String("\nt0:") +String::num_int64(time0) +
+			String("\nt1:") +String::num_int64(time1) +
+			String("\nt2:") +String::num_int64(time2) +
+			String("\nt3:") +String::num_int64(time3) +
+			(remove ? String("\nremove") : String(""))
+		);
 	}
 }
 
