@@ -1144,7 +1144,11 @@ void Variant::call_ptr(const StringName &p_method, const Variant **p_args, int p
 			return;
 		}
 #endif
+		if (!E || type == 0) {
+			print_verbose("CRASH");
+		}
 		_VariantCall::FuncData &funcdata = E->get();
+
 		funcdata.call(ret, *this, p_args, p_argcount, r_error);
 	}
 

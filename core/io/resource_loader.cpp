@@ -345,6 +345,9 @@ void ResourceLoader::_remove_from_loading_map_and_thread(const String &p_path, T
 
 RES ResourceLoader::load(const String &p_path, const String &p_type_hint, bool p_no_cache, Error *r_error) {
 
+	if (p_path.ends_with(String("DebugLabel.tscn"))) {
+		print_verbose("!");
+	}
 	if (r_error)
 		*r_error = ERR_CANT_OPEN;
 

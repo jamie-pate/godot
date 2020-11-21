@@ -1182,6 +1182,9 @@ void Node::_add_child_nocheck(Node *p_child, const StringName &p_name) {
 void Node::add_child(Node *p_child, bool p_legible_unique_name) {
 
 	ERR_FAIL_NULL(p_child);
+	if (!p_child || p_child == this || p_child->data.parent) {
+		print_verbose("fail");
+	}
 	ERR_FAIL_COND_MSG(p_child == this, "Can't add child '" + p_child->get_name() + "' to itself."); // adding to itself!
 	ERR_FAIL_COND_MSG(p_child->data.parent, "Can't add child '" + p_child->get_name() + "' to '" + get_name() + "', already has a parent '" + p_child->data.parent->get_name() + "'."); //Fail if node has a parent
 	ERR_FAIL_COND_MSG(data.blocked > 0, "Parent node is busy setting up children, add_node() failed. Consider using call_deferred(\"add_child\", child) instead.");

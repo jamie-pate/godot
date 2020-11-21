@@ -1079,12 +1079,13 @@ Variant GDScriptFunction::call(GDScriptInstance *p_instance, const Variant **p_a
 
 #endif
 				Variant::CallError err;
+
 				if (call_ret) {
 
 					GET_VARIANT_PTR(ret, argc);
 					base->call_ptr(*methodname, (const Variant **)argptrs, argc, ret, err);
 				} else {
-
+					GD_ERR_BREAK(base->get_type() == Variant::Type::NIL);
 					base->call_ptr(*methodname, (const Variant **)argptrs, argc, NULL, err);
 				}
 #ifdef DEBUG_ENABLED

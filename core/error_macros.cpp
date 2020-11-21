@@ -89,6 +89,9 @@ void _err_print_error(const char *p_function, const char *p_file, int p_line, co
 	}
 
 	_global_unlock();
+	if (p_type != ErrorHandlerType::ERR_HANDLER_WARNING) {
+		print_verbose("STOPPED");
+	}
 }
 
 void _err_print_error(const char *p_function, const char *p_file, int p_line, const String &p_error, const char *p_message, ErrorHandlerType p_type) {

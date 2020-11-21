@@ -266,6 +266,9 @@ Transform Spatial::get_transform() const {
 }
 Transform Spatial::get_global_transform() const {
 
+	if (!is_inside_tree()) {
+		print_verbose("fale");
+	}
 	ERR_FAIL_COND_V(!is_inside_tree(), Transform());
 
 	if (data.dirty & DIRTY_GLOBAL) {
