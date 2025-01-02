@@ -30,12 +30,20 @@
 
 package com.godot.game;
 
+import org.godotengine.godot.Godot;
 import org.godotengine.godot.GodotActivity;
+import org.godotengine.godot.utils.ProcessPhoenix;
 
+import android.content.ComponentName;
+import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
 
 import androidx.core.splashscreen.SplashScreen;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 
 import com.godot.game.BuildConfig;
 
@@ -56,8 +64,36 @@ public class GodotApp extends GodotActivity {
 		}
 	}
 
+	// Shouldn't conflict with BaseGodotEditor.RUN_GAME_INFO etc
+	private final static int WINDOW_ID = 668;
+	private final static String TAG = GodotApp.class.getSimpleName();
+
+	private ArrayList<String> commandLineParams = new ArrayList<String>();
+
+	@Override
+	public int onNewGodotInstanceRequested(String[] args) {
+		// Launch a new activity
+		Log.d(TAG, "Restarting with parameters " + String.join(",", args));
+		Godot godot = getGodot();
+		Intent newInstance = new Intent()
+									 .setComponent(new ComponentName(this, GodotApp.class))
+									 .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+									 .putExtra(getEXTRA_COMMAND_LINE_PARAMS(), args);
+		if (godot != null) {
+			godot.destroyAndKillProcess(
+					() -> ProcessPhoenix.triggerRebirth(this, newInstance));
+		} else {
+			ProcessPhoenix.triggerRebirth(this, newInstance);
+		}
+		return WINDOW_ID;
+	}
+
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
+		Intent intent = getIntent();
+		String[] params = intent.getStringArrayExtra(getEXTRA_COMMAND_LINE_PARAMS());
+		Log.d(TAG, "Starting intent " + intent + " with parameters " + (params != null ? String.join(" ", params) : "null"));
+		updateCommandLineParams(params != null && params.length > 0 ? Arrays.asList(params) : Collections.emptyList());
 		SplashScreen.installSplashScreen(this);
 		super.onCreate(savedInstanceState);
 	}

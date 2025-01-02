@@ -72,8 +72,6 @@ abstract class BaseGodotEditor : GodotActivity() {
 		private const val WAIT_FOR_DEBUGGER = false
 
 		@JvmStatic
-		protected val EXTRA_COMMAND_LINE_PARAMS = "command_line_params"
-		@JvmStatic
 		protected val EXTRA_PIP_AVAILABLE = "pip_available"
 		@JvmStatic
 		protected val EXTRA_LAUNCH_IN_PIP = "launch_in_pip_requested"
@@ -116,7 +114,6 @@ abstract class BaseGodotEditor : GodotActivity() {
 	}
 
 	private val editorMessageDispatcher = EditorMessageDispatcher(this)
-	private val commandLineParams = ArrayList<String>()
 	private val editorLoadingIndicator: View? by lazy { findViewById(R.id.editor_loading_indicator) }
 
 	override fun getGodotAppLayout() = R.layout.godot_editor_layout
@@ -196,16 +193,11 @@ abstract class BaseGodotEditor : GodotActivity() {
 	@CallSuper
 	protected open fun updateCommandLineParams(args: List<String>) {
 		// Update the list of command line params with the new args
-		commandLineParams.clear()
-		if (args.isNotEmpty()) {
-			commandLineParams.addAll(args)
-		}
+		super(args)
 		if (BuildConfig.BUILD_TYPE == "dev") {
-			commandLineParams.add("--benchmark")
+			getCommandLine().add("--benchmark")
 		}
 	}
-
-	final override fun getCommandLine() = commandLineParams
 
 	protected open fun retrieveEditorWindowInfo(args: Array<String>): EditorWindowInfo {
 		var hasEditor = false

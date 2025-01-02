@@ -53,9 +53,13 @@ abstract class GodotActivity : FragmentActivity(), GodotHost {
 		private val TAG = GodotActivity::class.java.simpleName
 
 		@JvmStatic
+		protected val EXTRA_COMMAND_LINE_PARAMS = "command_line_params"
+
+		@JvmStatic
 		protected val EXTRA_NEW_LAUNCH = "new_launch_requested"
 	}
 
+	private val commandLineParams = ArrayList<String>()
 	/**
 	 * Interaction with the [Godot] object is delegated to the [GodotFragment] class.
 	 */
@@ -176,4 +180,15 @@ abstract class GodotActivity : FragmentActivity(), GodotHost {
 	protected open fun initGodotInstance(): GodotFragment {
 		return GodotFragment()
 	}
+
+	@CallSuper
+	protected open fun updateCommandLineParams(args: List<String>) {
+		// Update the list of command line params with the new args
+		commandLineParams.clear()
+		if (args.isNotEmpty()) {
+			commandLineParams.addAll(args)
+		}
+	}
+
+	final override fun getCommandLine() = commandLineParams
 }
